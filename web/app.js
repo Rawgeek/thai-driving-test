@@ -6,12 +6,18 @@ const DEFAULTS = {
   timerEnabled: false, timePerQuestion: 72, theme: 'dark', ds: 'primary', showTh: false,
 };
 
+const DS_META = {
+  primary:   { label: 'Primary',   sub: 'Official 150-question set' },
+  safedrive: { label: 'Extended',  sub: 'safedrivedlt.com · 327' },
+};
+
 const DATASETS = {}; // ds_name -> {questions, rules, image_prefix, byId, total}
 const ATT_KEY = (ds) => 'attempts_' + ds;
 
 let CFG = loadCfg();
 let cur = null, locked = false, lastQId = null;
 let RUN = { active: false, answered: 0, correct: 0, target: 0, startMs: 0, totalSec: 0, timerId: null };
+let VIEW = 'home'; // 'home' | 'run' | 'summary'
 
 function loadCfg() {
   let s = {}; try { s = JSON.parse(localStorage.getItem('cfg') || '{}'); } catch (e) {}
@@ -69,6 +75,7 @@ function pickNext(ds, exclude, mastery, weak) {
 }
 function progressSummary(ds, mastery, weak) {
   const data = DATASETS[ds];
+  if (!data) return { total: 0, seen: 0, mastered: 0, weak: 0, remaining: 0 };
   const attempts = loadAttempts(ds);
   let mastered = 0, seenC = 0, weakC = 0;
   for (const q of data.questions) {
@@ -87,11 +94,63 @@ function recordAttempt(ds, qid, correct) {
   a[qid] = s; saveAttempts(ds, a);
 }
 
-// ---------- DOM ----------
-document.addEventListener('DOMContentLoaded', async () => {
+// ---------- view switching ----------
+function showHome() {
+  VIEW = 'home';
+  document.getElementById('home').hidden = false;
+  document.getElementById('runview').hidden = true;
+  document.getElementById('timer').hidden = true;
+  if (RUN.timerId) { clearInterval(RUN.timerId); RUN.timerId = null; }
+  RUN.active = false;
+  refreshHome();
+  // ensure both datasets are loaded so progress shows
+  Promise.all(['primary', 'safedrive'].map(ds => loadDataset(ds).catch(() => null)))
+    .then(refreshHome);
+}
+
+function showRun() {
+  VIEW = 'run';
+  document.getElementById('home').hidden = true;
+  document.getElementById('runview').hidden = false;
+}
+
+async function refreshHome() {
+  // selected card
+  document.querySelectorAll('.libcard').forEach(b => {
+    const on = b.dataset.ds === CFG.ds;
+    b.classList.toggle('selected', on);
+    b.setAttribute('aria-checked', on);
+  });
+  // per-dataset progress
+  for (const ds of ['primary', 'safedrive']) {
+    const data = DATASETS[ds];
+    const s = progressSummary(ds, CFG.masteryStreak, CFG.weakStreak);
+    const fillEl = document.getElementById(ds === 'primary' ? 'primFill' : 'sdFill');
+    const statsEl = document.getElementById(ds === 'primary' ? 'primStats' : 'sdStats');
+    const countEl = document.getElementById(ds === 'primary' ? 'primCount' : 'sdCount');
+    if (data) {
+      countEl.textContent = data.total;
+      const pct = data.total ? (s.mastered / data.total * 100) : 0;
+      fillEl.style.width = pct + '%';
+      statsEl.innerHTML = `<b>${s.mastered}</b> mastered · ${s.seen} seen · <span class=weak>${s.weak} weak</span>`;
+    } else {
+      statsEl.textContent = 'Loading…';
+    }
+  }
+  // run config preview
+  const max = (DATASETS[CFG.ds] && DATASETS[CFG.ds].total) || 0;
+  const len = CFG.limitQuestions ? Math.min(CFG.questionsPerRun, max || CFG.questionsPerRun) : (max || '—');
+  document.getElementById('cfgLen').textContent =
+    CFG.limitQuestions ? `${len} questions` : `Full set (${max || '…'})`;
+  document.getElementById('cfgTim').textContent = CFG.timerEnabled
+    ? `${CFG.timePerQuestion}s per question`
+    : 'Off';
+  document.getElementById('cfgMas').textContent = `${CFG.masteryStreak} in a row`;
+}
+
+// ---------- DOM bootstrap ----------
+document.addEventListener('DOMContentLoaded', () => {
   applyTheme(); applyShowTh();
-  document.getElementById('dsSel').value = CFG.ds;
-  document.getElementById('dsSel').addEventListener('change', switchDS);
   const chk = document.getElementById('thChk'), tog = document.getElementById('thToggle');
   chk.checked = CFG.showTh; tog.classList.toggle('on', CFG.showTh);
   chk.addEventListener('change', () => {
@@ -102,19 +161,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     CFG.theme = CFG.theme === 'dark' ? 'light' : 'dark'; saveCfg(); applyTheme();
   };
   document.getElementById('settingsBtn').onclick = openSettings;
+  document.getElementById('homeBtn').onclick = () => { if (VIEW !== 'home') showHome(); };
   document.getElementById('endRunBtn').onclick = () => endRun(false);
+  document.getElementById('startBtn').onclick = startRun;
+  document.getElementById('cfgEditBtn').onclick = openSettings;
+  document.querySelectorAll('.libcard').forEach(b => {
+    b.addEventListener('click', () => selectDS(b.dataset.ds));
+    b.addEventListener('dblclick', () => { selectDS(b.dataset.ds); startRun(); });
+    b.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectDS(b.dataset.ds); }
+    });
+  });
   document.addEventListener('keydown', onKey);
   bindSettings();
-
-  try {
-    await loadDataset(CFG.ds);
-    startRun();
-  } catch (e) {
-    document.getElementById('app').innerHTML =
-      `<div class="qcard done" role=alert>Failed to load <b>${escape(CFG.ds)}</b> dataset.<br><br>` +
-      `<small style="color:var(--muted)">${escape(String(e))}</small></div>`;
-  }
+  showHome();
 });
+
+function selectDS(ds) {
+  CFG.ds = ds; saveCfg(); refreshHome();
+}
 
 function applyTheme() {
   document.documentElement.classList.toggle('theme-light', CFG.theme === 'light');
@@ -127,24 +192,11 @@ function applyShowTh() {
   document.body.classList.toggle('hide-th', !CFG.showTh);
   document.getElementById('thChk').setAttribute('aria-checked', CFG.showTh);
 }
-async function switchDS() {
-  CFG.ds = document.getElementById('dsSel').value;
-  saveCfg();
-  try {
-    await loadDataset(CFG.ds);
-    const max = DATASETS[CFG.ds].total;
-    CFG.questionsPerRun = Math.min(CFG.questionsPerRun, max); saveCfg();
-    startRun();
-  } catch (e) {
-    document.getElementById('app').innerHTML =
-      `<div class="qcard done" role=alert>Failed to load dataset.</div>`;
-  }
-}
 
 function loadStats() {
   const s = progressSummary(CFG.ds, CFG.masteryStreak, CFG.weakStreak);
   document.getElementById('stats').innerHTML =
-    `<b>${s.mastered}</b>/${s.total} mastered · ${s.weak} weak · ${s.seen} seen`;
+    `<b>${s.mastered}</b>/${s.total} mastered · ${s.weak} weak`;
   const pct = s.total ? (s.mastered / s.total * 100) : 0;
   document.getElementById('barfill').style.width = pct + '%';
   document.getElementById('barOuter').setAttribute('aria-valuenow', Math.round(pct));
@@ -162,7 +214,7 @@ function loadNext() {
       '<div>All questions mastered.</div><br>' +
       '<button class=next type=button onclick="resetProgress()">Reset progress and start over</button></div>';
     app.setAttribute('aria-busy', 'false');
-    hideRunBar(); return;
+    return;
   }
   cur = q; render(q);
   app.setAttribute('aria-busy', 'false');
@@ -219,7 +271,6 @@ function answer(choice) {
   document.getElementById('runIdx').textContent = RUN.answered;
   document.getElementById('runCorrect').textContent = RUN.correct;
 
-  // build feedback
   const data = DATASETS[CFG.ds];
   const rules = (cur.rule_ids || []).map(rid => data.rules[rid]).filter(Boolean);
   let rulesHtml = '';
@@ -249,13 +300,20 @@ function next() {
   loadNext();
 }
 
-function startRun() {
+async function startRun() {
+  try {
+    await loadDataset(CFG.ds);
+  } catch (e) {
+    alert('Failed to load dataset: ' + e); return;
+  }
+  showRun();
+  const dsBadge = document.getElementById('runbarDs');
+  dsBadge.textContent = DS_META[CFG.ds].label + ' · ' + DATASETS[CFG.ds].total;
   RUN.active = true; RUN.answered = 0; RUN.correct = 0;
-  const max = DATASETS[CFG.ds] ? DATASETS[CFG.ds].total : CFG.questionsPerRun;
+  const max = DATASETS[CFG.ds].total;
   RUN.target = CFG.limitQuestions ? Math.min(CFG.questionsPerRun, max) : max;
   RUN.startMs = Date.now();
   RUN.totalSec = CFG.timerEnabled ? (RUN.target * CFG.timePerQuestion) : 0;
-  document.getElementById('runbar').style.display = 'flex';
   document.getElementById('runTarget').textContent = RUN.target;
   document.getElementById('runIdx').textContent = '0';
   document.getElementById('runCorrect').textContent = '0';
@@ -266,8 +324,8 @@ function startRun() {
 function startTimer() {
   if (RUN.timerId) { clearInterval(RUN.timerId); RUN.timerId = null; }
   const t = document.getElementById('timer');
-  if (!CFG.timerEnabled) { t.style.display = 'none'; t.removeAttribute('aria-live'); return; }
-  t.style.display = 'inline-flex';
+  if (!CFG.timerEnabled) { t.hidden = true; t.removeAttribute('aria-live'); return; }
+  t.hidden = false;
   function fmt(sec) {
     const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
     const mm = String(m).padStart(2, '0'), ss = String(s).padStart(2, '0');
@@ -295,15 +353,11 @@ function startTimer() {
   tick(); RUN.timerId = setInterval(tick, 500);
 }
 
-function hideRunBar() {
-  document.getElementById('runbar').style.display = 'none';
-  document.getElementById('timer').style.display = 'none';
-  if (RUN.timerId) { clearInterval(RUN.timerId); RUN.timerId = null; }
-  RUN.active = false;
-}
-
 function endRun(timedOut) {
-  hideRunBar();
+  if (RUN.timerId) { clearInterval(RUN.timerId); RUN.timerId = null; }
+  document.getElementById('timer').hidden = true;
+  RUN.active = false;
+  VIEW = 'summary';
   const elapsed = Math.floor((Date.now() - RUN.startMs) / 1000);
   const m = Math.floor(elapsed / 60), s = elapsed % 60;
   const tElapsed = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
@@ -317,13 +371,16 @@ function endRun(timedOut) {
   app.innerHTML = `
     <section class="qcard summary" role=status aria-label="Run summary">
       <div class=grade aria-label="Grade ${grade}">${grade}</div>
-      <div class=pct>${timedOut ? '⏱ Time’s up · ' : ''}${pct}% accuracy</div>
+      <div class=pct>${timedOut ? '⏱ Time’s up · ' : ''}${pct}% accuracy on ${DS_META[CFG.ds].label}</div>
       <div class=grid>
         <div class=cell><div class=num>${RUN.correct}</div><div class=lbl>Correct</div></div>
         <div class=cell><div class=num>${RUN.answered - RUN.correct}</div><div class=lbl>Wrong</div></div>
         <div class=cell><div class=num>${tElapsed}</div><div class=lbl>Time</div></div>
       </div>
-      <button class=next type=button id=newRunBtn onclick=startRun()>Start new run <span class=kbd aria-hidden=true>↵ Enter</span></button>
+      <div class=summary-actions>
+        <button class="btn btn-ghost btn-lg" type=button onclick="window.showHome()">← Home</button>
+        <button class="next" type=button id=newRunBtn onclick="window.startRun()">Start another run <span class=kbd aria-hidden=true>↵ Enter</span></button>
+      </div>
     </section>`;
   const btn = document.getElementById('newRunBtn'); if (btn) btn.focus();
 }
@@ -332,13 +389,23 @@ function onKey(e) {
   const tag = e.target.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
   if (document.getElementById('ruledlg').open || document.getElementById('setdlg').open) return;
-  if (!RUN.active && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startRun(); return; }
-  if (!locked && cur && /^[1-4]$/.test(e.key)) {
-    const idx = parseInt(e.key, 10) - 1;
-    if (cur.options.some(o => o.idx === idx)) { e.preventDefault(); answer(idx); }
-  } else if (locked && (e.key === 'Enter' || e.key === ' ')) {
-    e.preventDefault(); next();
-  } else if (e.key === 't' || e.key === 'T') {
+  if (VIEW === 'home' && (e.key === 'Enter' || e.key === ' ')) {
+    if (e.target.classList && e.target.classList.contains('libcard')) return; // let card handle
+    e.preventDefault(); startRun(); return;
+  }
+  if (VIEW === 'summary' && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault(); startRun(); return;
+  }
+  if (VIEW === 'run') {
+    if (!locked && cur && /^[1-4]$/.test(e.key)) {
+      const idx = parseInt(e.key, 10) - 1;
+      if (cur.options.some(o => o.idx === idx)) { e.preventDefault(); answer(idx); }
+    } else if (locked && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault(); next();
+    }
+  }
+  if (e.key === 'Escape' && VIEW !== 'home') { e.preventDefault(); showHome(); return; }
+  if (e.key === 't' || e.key === 'T') {
     const c = document.getElementById('thChk'); c.checked = !c.checked; c.dispatchEvent(new Event('change'));
   } else if (e.key === 's' || e.key === 'S') { e.preventDefault(); openSettings(); }
 }
@@ -353,9 +420,9 @@ function showRule(id) {
 }
 
 function resetProgress() {
-  if (!confirm('Reset progress for the ' + CFG.ds + ' dataset?')) return;
+  if (!confirm('Reset progress for the ' + DS_META[CFG.ds].label + ' (' + CFG.ds + ') dataset?')) return;
   localStorage.removeItem(ATT_KEY(CFG.ds));
-  startRun();
+  if (VIEW === 'home') refreshHome(); else showHome();
 }
 
 function escape(s) { return (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -382,6 +449,7 @@ function openSettings() {
   });
   $('setdlg').showModal();
   $('setdlg').querySelector('input,button,select').focus();
+  $('setdlg').addEventListener('close', refreshHome, { once: true });
 }
 
 function bindSettings() {
@@ -394,8 +462,8 @@ function bindSettings() {
       if (cb) cb(v);
     });
   };
-  onRange($('rngMastery'), $('valMastery'), 'masteryStreak', '', () => loadStats());
-  onRange($('rngWeak'), $('valWeak'), 'weakStreak', '', () => loadStats());
+  onRange($('rngMastery'), $('valMastery'), 'masteryStreak', '', () => { if (VIEW === 'run') loadStats(); });
+  onRange($('rngWeak'), $('valWeak'), 'weakStreak', '', () => { if (VIEW === 'run') loadStats(); });
   onRange($('rngQpr'), $('valQpr'), 'questionsPerRun');
   onRange($('rngTpq'), $('valTpq'), 'timePerQuestion', 's');
   $('swTimer').addEventListener('click', () => {
@@ -434,4 +502,4 @@ function bindSettings() {
 
 // expose for inline onclick handlers
 window.answer = answer; window.next = next; window.startRun = startRun;
-window.showRule = showRule; window.resetProgress = resetProgress;
+window.showRule = showRule; window.resetProgress = resetProgress; window.showHome = showHome;

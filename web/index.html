@@ -11,37 +11,107 @@
 <link rel=stylesheet href=styles.css>
 </head>
 <body>
-<a class=skip href="#app">Skip to question</a>
+<a class=skip href="#main">Skip to main</a>
 <header role=banner>
   <div class=hdr-row>
-    <label for=dsSel class=sr-only>Question set</label>
-    <select class=dsel id=dsSel aria-label="Question set">
-      <option value=primary>Primary · 150 questions</option>
-      <option value=safedrive>safedrivedlt.com · 327 questions · 11 categories</option>
-    </select>
-    <span class=brand aria-hidden=true>Thai Driving Trainer</span>
+    <button class="brand brand-btn" id=homeBtn type=button aria-label="Back to home">
+      <span class=brand-mark aria-hidden=true>🛣️</span>
+      <span class=brand-text>Thai Driving Trainer</span>
+    </button>
     <span class=spacer></span>
-    <span class=timer id=timer style="display:none" role=timer aria-live=off aria-atomic=true>--:--</span>
+    <span class=timer id=timer hidden role=timer aria-live=off aria-atomic=true>--:--</span>
     <label class=toggle id=thToggle title="Show Thai original (T)">
       <input type=checkbox id=thChk aria-label="Show Thai original">
       <span lang=th>ไทย</span>
     </label>
     <button class=iconbtn id=themeBtn type=button aria-label="Toggle theme" aria-pressed=false><span aria-hidden=true>◐</span></button>
     <button class=iconbtn id=settingsBtn type=button aria-label="Settings" aria-haspopup=dialog aria-controls=setdlg><span aria-hidden=true>⚙</span></button>
-    <span class=stats id=stats aria-live=polite aria-atomic=true></span>
   </div>
 </header>
+
 <main class=wrap id=main>
-<div class=bar role=progressbar aria-label="Mastery progress" aria-valuemin=0 aria-valuemax=100 id=barOuter aria-valuenow=0>
-  <div id=barfill style="width:0%"></div>
-</div>
-<div class=runbar id=runbar style="display:none" aria-label="Current run">
-  <span>Run <b id=runIdx>0</b> / <b id=runTarget>0</b></span>
-  <span>Correct <b id=runCorrect>0</b></span>
-  <span class=spacer></span>
-  <button class="btn" id=endRunBtn type=button style="font-size:12px;padding:6px 12px;min-height:32px">End run</button>
-</div>
-<div id=app aria-live=polite aria-busy=false></div>
+
+<!-- ============ HOME / DASHBOARD ============ -->
+<section id=home aria-label="Home">
+  <div class=hero>
+    <h1 class=hero-title>Practice for the Thai driving theory test</h1>
+    <p class=hero-sub>Bilingual flashcards · adaptive selection · explanations grounded in the official rule book.</p>
+  </div>
+
+  <h2 class=section-title>Question library</h2>
+  <p class=section-sub>Pick a question bank. Your progress is saved separately for each.</p>
+  <div class=libgrid role=radiogroup aria-label="Question library">
+    <button class=libcard data-ds=primary type=button role=radio aria-checked=false>
+      <div class=libcard-head>
+        <span class=libcard-badge>Primary</span>
+        <span class=libcard-count><b id=primCount>150</b> questions</span>
+      </div>
+      <h3 class=libcard-title>Official 150-question set</h3>
+      <p class=libcard-desc>The classic Thailand driving licence theory bank. Curated and translated by lostintime101.</p>
+      <div class=libcard-prog>
+        <div class=miniprog><div class=miniprogfill id=primFill style="width:0%"></div></div>
+        <div class=libcard-stats id=primStats>—</div>
+      </div>
+    </button>
+
+    <button class=libcard data-ds=safedrive type=button role=radio aria-checked=false>
+      <div class=libcard-head>
+        <span class=libcard-badge>Extended</span>
+        <span class=libcard-count><b id=sdCount>327</b> questions</span>
+      </div>
+      <h3 class=libcard-title>safedrivedlt.com · 11 categories</h3>
+      <p class=libcard-desc>Larger pool covering signs, regulations, vehicle handling, and more from safedrivedlt.com.</p>
+      <div class=libcard-prog>
+        <div class=miniprog><div class=miniprogfill id=sdFill style="width:0%"></div></div>
+        <div class=libcard-stats id=sdStats>—</div>
+      </div>
+    </button>
+  </div>
+
+  <h2 class=section-title>Today's run</h2>
+  <div class=runcfg>
+    <div class=runcfg-row>
+      <div class=runcfg-item>
+        <div class=runcfg-lbl>Length</div>
+        <div class=runcfg-val id=cfgLen>50 questions</div>
+      </div>
+      <div class=runcfg-item>
+        <div class=runcfg-lbl>Timer</div>
+        <div class=runcfg-val id=cfgTim>Off</div>
+      </div>
+      <div class=runcfg-item>
+        <div class=runcfg-lbl>Mastery streak</div>
+        <div class=runcfg-val id=cfgMas>3</div>
+      </div>
+    </div>
+    <div class=runcfg-actions>
+      <button class="btn btn-ghost" id=cfgEditBtn type=button>
+        <span aria-hidden=true>⚙</span> Adjust settings
+      </button>
+      <button class="btn btn-primary btn-lg" id=startBtn type=button>
+        <span aria-hidden=true>▶</span> Start run <span class=kbd aria-hidden=true>↵</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RUN VIEW ============ -->
+<section id=runview hidden aria-label="Current run">
+  <div class=bar role=progressbar aria-label="Mastery progress" aria-valuemin=0 aria-valuemax=100 id=barOuter aria-valuenow=0>
+    <div id=barfill style="width:0%"></div>
+  </div>
+  <div class=runbar id=runbar>
+    <span class=runbar-pill><span class=runbar-lbl>Run</span> <b id=runIdx>0</b> / <b id=runTarget>0</b></span>
+    <span class=runbar-pill><span class=runbar-lbl>Correct</span> <b id=runCorrect>0</b></span>
+    <span class=runbar-ds id=runbarDs></span>
+    <span class=spacer></span>
+    <span class=stats id=stats aria-live=polite aria-atomic=true></span>
+    <button class="btn btn-sm" id=endRunBtn type=button>End run</button>
+  </div>
+  <div id=app aria-live=polite aria-busy=false></div>
+</section>
+
+<!-- ============ DIALOGS ============ -->
 <dialog id=ruledlg aria-labelledby=ruledlg_title>
   <button class=close type=button onclick="document.getElementById('ruledlg').close()" aria-label="Close"><span aria-hidden=true>×</span></button>
   <h3 id=ruledlg_title></h3>
@@ -98,6 +168,7 @@
   </form>
 </dialog>
 </main>
+
 <footer class=foot role=contentinfo>
   <p class=foot-credits>
     Question banks &copy; their original publishers.
