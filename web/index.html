@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang=en>
+<head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name=color-scheme content="dark light">
+<meta name=theme-color content="#0b0d12" media="(prefers-color-scheme: dark)">
+<meta name=theme-color content="#f5f6fa" media="(prefers-color-scheme: light)">
+<meta name=description content="Bilingual Thai driving licence test trainer">
+<title>Thai Driving Trainer</title>
+<link rel=stylesheet href=styles.css>
+</head>
+<body>
+<a class=skip href="#app">Skip to question</a>
+<header role=banner>
+  <div class=hdr-row>
+    <label for=dsSel class=sr-only>Question set</label>
+    <select class=dsel id=dsSel aria-label="Question set">
+      <option value=primary>Primary · 150 questions</option>
+      <option value=safedrive>safedrivedlt.com · 327 questions · 11 categories</option>
+    </select>
+    <span class=brand aria-hidden=true>Thai Driving Trainer</span>
+    <span class=spacer></span>
+    <span class=timer id=timer style="display:none" role=timer aria-live=off aria-atomic=true>--:--</span>
+    <label class=toggle id=thToggle title="Show Thai original (T)">
+      <input type=checkbox id=thChk aria-label="Show Thai original">
+      <span lang=th>ไทย</span>
+    </label>
+    <button class=iconbtn id=themeBtn type=button aria-label="Toggle theme" aria-pressed=false><span aria-hidden=true>◐</span></button>
+    <button class=iconbtn id=settingsBtn type=button aria-label="Settings" aria-haspopup=dialog aria-controls=setdlg><span aria-hidden=true>⚙</span></button>
+    <span class=stats id=stats aria-live=polite aria-atomic=true></span>
+  </div>
+</header>
+<main class=wrap id=main>
+<div class=bar role=progressbar aria-label="Mastery progress" aria-valuemin=0 aria-valuemax=100 id=barOuter aria-valuenow=0>
+  <div id=barfill style="width:0%"></div>
+</div>
+<div class=runbar id=runbar style="display:none" aria-label="Current run">
+  <span>Run <b id=runIdx>0</b> / <b id=runTarget>0</b></span>
+  <span>Correct <b id=runCorrect>0</b></span>
+  <span class=spacer></span>
+  <button class="btn" id=endRunBtn type=button style="font-size:12px;padding:6px 12px;min-height:32px">End run</button>
+</div>
+<div id=app aria-live=polite aria-busy=false></div>
+<dialog id=ruledlg aria-labelledby=ruledlg_title>
+  <button class=close type=button onclick="document.getElementById('ruledlg').close()" aria-label="Close"><span aria-hidden=true>×</span></button>
+  <h3 id=ruledlg_title></h3>
+  <pre id=ruledlg_body></pre>
+</dialog>
+<dialog id=setdlg aria-labelledby=setdlg_title>
+  <button class=close type=button onclick="document.getElementById('setdlg').close()" aria-label="Close settings"><span aria-hidden=true>×</span></button>
+  <h3 id=setdlg_title>Settings</h3>
+  <form class="settings dlg-body" onsubmit="return false">
+    <div class=field>
+      <label id=lblTheme>Theme</label>
+      <div class=seg id=segTheme role=radiogroup aria-labelledby=lblTheme>
+        <button data-v=dark type=button role=radio aria-checked=false aria-pressed=false>Dark</button>
+        <button data-v=light type=button role=radio aria-checked=false aria-pressed=false>Light</button>
+      </div>
+    </div>
+    <div class=field>
+      <label for=rngMastery>Mastery streak <span class=val id=valMastery>3</span></label>
+      <input type=range id=rngMastery min=1 max=10 step=1 aria-describedby=hintMastery>
+      <div class=hint id=hintMastery>Consecutive correct answers needed to consider a question mastered.</div>
+    </div>
+    <div class=field>
+      <label for=rngWeak>Out-of-weak streak <span class=val id=valWeak>1</span></label>
+      <input type=range id=rngWeak min=1 max=10 step=1 aria-describedby=hintWeak>
+      <div class=hint id=hintWeak>Consecutive correct answers needed to leave the “weak” pool.</div>
+    </div>
+    <div class=field>
+      <div class=row>
+        <label id=lblLimit for=swLimit style="margin:0">Limit questions per run</label>
+        <button type=button class=switch id=swLimit role=switch aria-checked=false aria-labelledby=lblLimit></button>
+      </div>
+      <div class=hint>When off, a run uses all questions in the active dataset.</div>
+    </div>
+    <div class=field id=fldQpr hidden>
+      <label for=rngQpr>Questions per run <span class=val id=valQpr>50</span></label>
+      <input type=range id=rngQpr min=10 max=400 step=1 aria-describedby=hintQpr>
+      <div class=hint id=hintQpr>Slider max adapts to the active dataset.</div>
+    </div>
+    <div class=field>
+      <div class=row>
+        <label id=lblTimer for=swTimer style="margin:0">Enable timer</label>
+        <button type=button class=switch id=swTimer role=switch aria-checked=false aria-labelledby=lblTimer></button>
+      </div>
+      <div class=hint>Total time = questions per run × time per question.</div>
+    </div>
+    <div class=field id=fldTpq hidden>
+      <label for=rngTpq>Time per question <span class=val id=valTpq>72s</span></label>
+      <input type=range id=rngTpq min=15 max=180 step=1>
+    </div>
+    <div class=actions>
+      <button class="btn btn-danger" id=resetProgBtn type=button>Reset progress</button>
+      <button class="btn btn-primary" type=button onclick="document.getElementById('setdlg').close()">Done</button>
+    </div>
+  </form>
+</dialog>
+</main>
+<footer class=foot role=contentinfo>
+  <a href="https://rawgeek.github.io/thai-driving-rules-translations" target=_blank rel="noopener noreferrer">Translated rule book</a>
+  <span aria-hidden=true>·</span>
+  <a href="https://github.com/lostintime101/driving_theory_test" target=_blank rel="noopener noreferrer">Original question bank (lostintime101)</a>
+  <span aria-hidden=true>·</span>
+  <a href="https://github.com/rawgeek/thai-driving-test" target=_blank rel="noopener noreferrer">Source on GitHub</a>
+</footer>
+<script src=app.js></script>
+</body>
+</html>
