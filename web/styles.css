@@ -278,6 +278,33 @@ dialog pre{white-space:pre-wrap;font-family:inherit;font-size:14px;color:var(--t
   letter-spacing:-.015em;line-height:1.15;background:linear-gradient(180deg,var(--text),color-mix(in srgb,var(--text) 75%,var(--accent2)));
   -webkit-background-clip:text;background-clip:text;color:transparent}
 .hero-sub{margin:0;font-size:15px;color:var(--muted);max-width:640px;line-height:1.55}
+.hero-sub-th{margin:8px 0 0;font-size:14px;color:var(--text-th);max-width:640px;line-height:1.6}
+.hide-th .hero-sub-th{display:none}
+
+.about{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px 22px;color:var(--text);font-size:14.5px;line-height:1.65;margin-bottom:8px}
+.about p{margin:0 0 10px}
+.about p:last-child{margin-bottom:0}
+.about a{color:var(--accent2);text-decoration:none;border-bottom:1px dotted var(--line2)}
+.about a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.about strong{color:var(--text);font-weight:600}
+.about code{font-family:ui-monospace,SFMono-Regular,monospace;font-size:.9em;
+  background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+
+.faq{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:0 18px;transition:border-color .15s}
+.faq details[open]{border-color:var(--accent)}
+.faq summary{cursor:pointer;list-style:none;padding:14px 0;font-weight:600;font-size:14.5px;
+  color:var(--text);display:flex;align-items:center;gap:10px;user-select:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:'+';color:var(--accent);font-weight:700;font-size:18px;
+  width:18px;display:inline-flex;justify-content:center;transition:transform .2s}
+.faq details[open] summary::before{content:'−'}
+.faq summary:focus-visible{outline:none;box-shadow:0 0 0 3px var(--accent-ring);border-radius:6px}
+.faq details p{margin:0 0 14px 28px;font-size:14px;color:var(--muted);line-height:1.6}
+.faq details a{color:var(--accent2);text-decoration:none;border-bottom:1px dotted var(--line2)}
+.faq details a:hover{color:var(--accent);border-bottom-color:var(--accent)}
 
 .section-title{margin:32px 0 4px;font-size:13px;font-weight:700;color:var(--muted);
   text-transform:uppercase;letter-spacing:.1em}
