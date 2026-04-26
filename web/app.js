@@ -286,7 +286,7 @@ function answer(choice) {
   document.getElementById('feedback').innerHTML = `
     <div class="expl ${klass}" role=status aria-live=polite>
       <h3>${head}</h3>
-      ${explanation ? escape(explanation) : '<i style="color:var(--muted)">No explanation available for this question.</i>'}
+      ${explanation ? renderExplanation(explanation, data.rules) : '<i style="color:var(--muted)">No explanation available for this question.</i>'}
       ${rulesHtml}
     </div>
     <button class=next id=nextBtn type=button onclick="next()" aria-keyshortcuts="Enter">${isLast ? 'Finish run' : 'Next question'} <span class=kbd aria-hidden=true>↵ Enter</span></button>`;
@@ -426,6 +426,28 @@ function resetProgress() {
 }
 
 function escape(s) { return (s || '').toString().replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function renderExplanation(text, rulesDict) {
+  if (!text) return '';
+  let s = escape(text);
+  // Convert rule_id=NNN references into clickable rule links
+  s = s.replace(/(?:\(\s*)?rule_id\s*=\s*(\d+)((?:\s*[\/,]\s*\d+)*)\s*\)?/gi, (m, first, rest) => {
+    const ids = [first, ...(rest ? rest.match(/\d+/g) || [] : [])];
+    const links = ids.map(id => {
+      const r = rulesDict && rulesDict[id];
+      if (!r) return 'rule&nbsp;' + id;
+      const label = 'p.' + r.page + (r.section ? ' — ' + escape(r.section) : '');
+      return `<a href="#" class="rref" onclick="showRule(${id});return false">📖 ${label}</a>`;
+    });
+    return links.join(', ');
+  });
+  // Inline markdown
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[^*\w])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  // Paragraphs and line breaks
+  return s.split(/\n{2,}/).map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
+}
 
 function openSettings() {
   const max = (DATASETS[CFG.ds] && DATASETS[CFG.ds].total) || 400;
