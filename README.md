@@ -38,11 +38,23 @@ cd web && python3 -m http.server 8000
 | `T` | Toggle Thai original |
 | `S` | Open settings |
 
-## Data attribution
+## Credits & attribution
 
-Question content is sourced from publicly available test banks
-(thaidrivingtest.com, safedrivedlt.com). Explanations are LLM-generated with
-citations to the official handbook. This is an unaffiliated study aid.
+This trainer would not exist without the work of others. Please give them stars and traffic:
+
+- **Primary 150-question bank** — compiled and translated by **[lostintime101/driving_theory_test](https://github.com/lostintime101/driving_theory_test/)**. The English translations and the question/answer JSON for the primary set originate from that repository. Huge thanks to lostintime101.
+- **Extended 327-question bank (11 categories)** — scraped from **[safedrivedlt.com](https://safedrivedlt.com/courses/ข้อสอบใบขับขี่-ฝึกทํา/quizzes/แบบทดสอบ-quizmaker-แทรกรูป-html/)**, a free public Thai-language driving quiz site. All Thai source text and illustrations belong to safedrivedlt.com.
+- **Rule citations** — extracted from the official Department of Land Transport handbook; English translations live at [rawgeek.github.io/thai-driving-rules-translations](https://rawgeek.github.io/thai-driving-rules-translations).
+- **Explanations** — LLM-generated and grounded in the rule citations above.
+
+This project is an unaffiliated study aid. If any rights-holder wants content removed, open an issue.
+
+## License & content
+
+Code in this repository is MIT-licensed. Question text, Thai source content,
+and illustrations remain the property of their original publishers (see
+attribution above). Re-use of the *content* should respect the upstream
+sources' terms.
 
 ## Privacy
 
