@@ -13,7 +13,7 @@ dist/
 .python-version
 
 # raw scraping artefacts and database stay local; only the exported web/ ships
-data/
+/data/
 
 # Dev-only Python pipeline (scraper, importer, LLM enrichment, FastAPI trainer).
 # Kept locally for reproducibility but not part of the deployed static site.
