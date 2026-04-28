@@ -1,0 +1,19 @@
+{
+  "name": "Thai Driving Trainer",
+  "short_name": "Thai Driving",
+  "description": "Bilingual practice for the Thailand driving licence theory test.",
+  "start_url": "/thai-driving-test/",
+  "scope": "/thai-driving-test/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "lang": "en",
+  "categories": ["education", "books", "productivity"],
+  "icons": [
+    { "src": "favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}
