@@ -3,7 +3,7 @@
 Bilingual (English / Thai) flashcard-style trainer for the Thailand driving
 licence theory test.
 
-**Live demo:** deployed to GitHub Pages from the [`web/`](web/) directory on every push to `main`.
+**Live demo:** deployed to GitHub Pages from the [`docs/`](docs/) directory on `main`.
 
 ## Features
 
@@ -19,8 +19,8 @@ licence theory test.
 This is a pure static site — `web/index.html`, `web/styles.css`, `web/app.js`,
 plus pre-rendered JSON datasets and images. No build step, no backend.
 
-GitHub Actions ([`.github/workflows/pages.yml`](.github/workflows/pages.yml))
-publishes `web/` to GitHub Pages.
+`web/` remains the editable static source. The export script mirrors it into
+`docs/`, which GitHub Pages serves directly from the `main` branch.
 
 To preview locally:
 
