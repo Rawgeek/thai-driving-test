@@ -7,7 +7,7 @@ licence theory test.
 
 ## Features
 
-- Two question banks: 150-question primary set + 327-question safedrivedlt.com set (11 categories)
+- Three question banks: 150-question primary set + 327-question safedrivedlt.com set + 598-question thaidriveexam.com set
 - Adaptive selection: weights weak / unseen questions higher; mastered ones drop out
 - Configurable mastery streak, weak-pool streak, run length, and per-question timer
 - LLM-generated explanations grounded in citations from the official Thai handbook
@@ -29,6 +29,14 @@ cd web && python3 -m http.server 8000
 # open http://127.0.0.1:8000
 ```
 
+To run with Docker:
+
+```sh
+docker build -t thai-driving-trainer .
+docker run --rm -p 8080:80 thai-driving-trainer
+# open http://127.0.0.1:8080
+```
+
 ## Keyboard shortcuts
 
 | Key | Action |
@@ -44,6 +52,7 @@ This trainer would not exist without the work of others. Please give them stars 
 
 - **Primary 150-question bank** — compiled and translated by **[lostintime101/driving_theory_test](https://github.com/lostintime101/driving_theory_test/)**. The English translations and the question/answer JSON for the primary set originate from that repository. Huge thanks to lostintime101.
 - **Extended 327-question bank (11 categories)** — scraped from **[safedrivedlt.com](https://safedrivedlt.com/courses/ข้อสอบใบขับขี่-ฝึกทํา/quizzes/แบบทดสอบ-quizmaker-แทรกรูป-html/)**, a free public Thai-language driving quiz site. All Thai source text and illustrations belong to safedrivedlt.com.
+- **Thai Drive Exam 598-question bank (5 categories)** — scraped from five public question-and-answer articles on **[thaidriveexam.com](https://thaidriveexam.com/)**. English text is the Google-powered translation displayed by that site; Thai source text and illustrations belong to thaidriveexam.com.
 - **Rule citations** — extracted from the official Department of Land Transport handbook; English translations live at [rawgeek.github.io/thai-driving-rules-translations](https://rawgeek.github.io/thai-driving-rules-translations).
 - **Explanations** — LLM-generated and grounded in the rule citations above.
 
@@ -59,4 +68,4 @@ sources' terms.
 ## Privacy
 
 Nothing leaves your browser. Progress is stored under `localStorage` keys
-`cfg`, `attempts_primary`, and `attempts_safedrive`.
+`cfg`, `attempts_primary`, `attempts_safedrive`, and `attempts_thaidriveexam`.
