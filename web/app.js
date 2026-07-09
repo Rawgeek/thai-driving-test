@@ -7,9 +7,20 @@ const DEFAULTS = {
 };
 
 const DS_META = {
-  primary:   { label: 'Primary',   sub: 'Official 150-question set' },
-  safedrive: { label: 'Extended',  sub: 'safedrivedlt.com · 327' },
+  primary: {
+    label: 'Primary', sub: 'Official 150-question set',
+    countId: 'primCount', fillId: 'primFill', statsId: 'primStats',
+  },
+  safedrive: {
+    label: 'Extended', sub: 'safedrivedlt.com · 327',
+    countId: 'sdCount', fillId: 'sdFill', statsId: 'sdStats',
+  },
+  thaidriveexam: {
+    label: 'Thai Drive Exam', sub: 'thaidriveexam.com · 598',
+    countId: 'tdeCount', fillId: 'tdeFill', statsId: 'tdeStats',
+  },
 };
+const DATASET_NAMES = Object.keys(DS_META);
 
 const DATASETS = {}; // ds_name -> {questions, rules, image_prefix, byId, total}
 const ATT_KEY = (ds) => 'attempts_' + ds;
@@ -33,7 +44,7 @@ function saveAttempts(ds, a) { localStorage.setItem(ATT_KEY(ds), JSON.stringify(
 
 async function loadDataset(ds) {
   if (DATASETS[ds]) return DATASETS[ds];
-  const r = await fetch(`data/${ds}.json`, { cache: 'force-cache' });
+  const r = await fetch(`data/${ds}.json`, { cache: 'no-store' });
   if (!r.ok) throw new Error('failed to load ' + ds);
   const d = await r.json();
   d.byId = {};
@@ -103,8 +114,8 @@ function showHome() {
   if (RUN.timerId) { clearInterval(RUN.timerId); RUN.timerId = null; }
   RUN.active = false;
   refreshHome();
-  // ensure both datasets are loaded so progress shows
-  Promise.all(['primary', 'safedrive'].map(ds => loadDataset(ds).catch(() => null)))
+  // Ensure every dataset is loaded so progress shows.
+  Promise.all(DATASET_NAMES.map(ds => loadDataset(ds).catch(() => null)))
     .then(refreshHome);
 }
 
@@ -122,12 +133,13 @@ async function refreshHome() {
     b.setAttribute('aria-checked', on);
   });
   // per-dataset progress
-  for (const ds of ['primary', 'safedrive']) {
+  for (const ds of DATASET_NAMES) {
     const data = DATASETS[ds];
     const s = progressSummary(ds, CFG.masteryStreak, CFG.weakStreak);
-    const fillEl = document.getElementById(ds === 'primary' ? 'primFill' : 'sdFill');
-    const statsEl = document.getElementById(ds === 'primary' ? 'primStats' : 'sdStats');
-    const countEl = document.getElementById(ds === 'primary' ? 'primCount' : 'sdCount');
+    const meta = DS_META[ds];
+    const fillEl = document.getElementById(meta.fillId);
+    const statsEl = document.getElementById(meta.statsId);
+    const countEl = document.getElementById(meta.countId);
     if (data) {
       countEl.textContent = data.total;
       const pct = data.total ? (s.mastered / data.total * 100) : 0;
